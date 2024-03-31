@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class GenresModel(models.Model):
     id = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=80)
@@ -21,8 +22,7 @@ class ClubModel(models.Model):
 class MeetingModel(models.Model):
     id = models.IntegerField(primary_key=True)
     club = models.ForeignKey(ClubModel, on_delete=models.CASCADE)
-    name = models.CharField(max_length=30,null=False)
+    name = models.CharField(max_length=30, null=False)
     date = models.DateField()
     time = models.TimeField()
     location = models.CharField(max_length=150)
-
