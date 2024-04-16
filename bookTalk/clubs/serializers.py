@@ -7,10 +7,22 @@ class ClubCardSerializer(serializers.ModelSerializer):
     name = serializers.CharField()
     description = serializers.CharField()
     city = serializers.SlugRelatedField(many=False, read_only=True, slug_field='name')
-    interests = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name', queryset=GenresModel.objects.all())
+    interests = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name',
+                                             queryset=GenresModel.objects.all())
 
     class Meta:
         model = ClubModel
         fields = ('id', 'name', 'description', 'city', 'interests')
         read_only_fields = ('id', 'city')
         many = False
+
+
+class ClubCreateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField()
+    description = serializers.CharField()
+    city_fiass = serializers.CharField(max_length=50)
+    interests = serializers.PrimaryKeyRelatedField(many=True, queryset=GenresModel.objects.all())
+
+    class Meta:
+        model = ClubModel
+        fields = "__all__"
