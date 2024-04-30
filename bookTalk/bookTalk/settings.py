@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'drf_yasg',
     'authorisation',
     'clubs',
-    'genres'
+    'genres',
+    'conversations'
 ]
 
 MIDDLEWARE = [

@@ -10,7 +10,6 @@ class User(AbstractUser):
     groups = models.ManyToManyField(Group,related_name="groups")
     user_permissions = models.ManyToManyField(Permission,related_name="permissions")
     refresh_token = models.TextField()
-    name = models.CharField(max_length=255, null=False)
     city = models.ForeignKey(CityModel, on_delete=models.PROTECT)
     email = models.EmailField(null=True)
     interests = models.ManyToManyField(GenresModel)

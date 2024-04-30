@@ -38,5 +38,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('authorisation.urls')),
     path('clubs/', include('clubs.urls')),
-    path('genres/', include('genres.urls'))
+    path('genres/', include('genres.urls')),
+    path('conversations/', include('conversations.urls'))
 ]
