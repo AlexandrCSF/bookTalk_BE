@@ -11,12 +11,16 @@ class ConversationSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = MessageModel
-        fields = ['id', 'conversation', 'author','text']
+        fields = ['id', 'conversation', 'author', 'text']
 
 
 class ConversationRequestSerializer(serializers.Serializer):
     club_id = serializers.IntegerField()
 
 
-class MessageRequestSerializer(serializers.Serializer):
+class MessageListRequestSerializer(serializers.Serializer):
     conversation_id = serializers.IntegerField()
+
+
+class MessageDestroyRequestSerializer(serializers.Serializer):
+    message_id = serializers.IntegerField()

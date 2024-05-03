@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import mixins, generics, serializers, status
-from rest_framework.response import Response
+from rest_framework import mixins, generics, status
 from genres.serializers import GenresSerializer
 from genres.models import GenresModel
 
@@ -14,4 +13,5 @@ class GenresView(mixins.ListModelMixin, generics.GenericAPIView):
         status.HTTP_200_OK: serializer_class()
     })
     def get(self, request, *args, **kwargs):
+        """Список всех жанров"""
         return self.list(request, *args, **kwargs)
