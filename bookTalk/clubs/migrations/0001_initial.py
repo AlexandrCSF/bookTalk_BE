@@ -16,8 +16,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CityModel',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('city_fias', models.CharField(max_length=50)),
+                ('city_fias', models.CharField(max_length=50, primary_key=True, serialize=False)),
                 ('name', models.CharField(max_length=40)),
             ],
         ),

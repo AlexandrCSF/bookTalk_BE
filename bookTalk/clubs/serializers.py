@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import ClubModel, GenresModel
+from clubs.models import ClubModel, GenresModel, CityModel
 
 
 class ClubCardSerializer(serializers.ModelSerializer):
@@ -17,12 +17,24 @@ class ClubCardSerializer(serializers.ModelSerializer):
         many = False
 
 
-class ClubCreateSerializer(serializers.ModelSerializer):
+class ClubCardSerializerRequest(serializers.ModelSerializer):
     name = serializers.CharField()
     description = serializers.CharField()
-    city_fiass = serializers.CharField(max_length=50)
+    city_fias = serializers.CharField(max_length=50)
     interests = serializers.PrimaryKeyRelatedField(many=True, queryset=GenresModel.objects.all())
 
     class Meta:
         model = ClubModel
         fields = "__all__"
+
+
+class ClubCreateSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    description = serializers.CharField()
+    city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
+
+class CitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CityModel
+        fields = '__all__'
