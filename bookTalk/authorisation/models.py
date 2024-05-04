@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group, AbstractUser, Permission
 from django.db import models
 from django.contrib.auth.hashers import make_password, check_password
-from clubs.models import ClubModel, GenresModel, CityModel
+from clubs.models import GenresModel, CityModel
 
 
 class User(AbstractUser):
@@ -13,7 +13,6 @@ class User(AbstractUser):
     city = models.ForeignKey(CityModel, on_delete=models.PROTECT,db_column='city_fias')
     email = models.EmailField(null=True)
     interests = models.ManyToManyField(GenresModel)
-    clubs = models.ManyToManyField(ClubModel)
 
     def set_password(self, raw_password):
         self.password = make_password(raw_password)

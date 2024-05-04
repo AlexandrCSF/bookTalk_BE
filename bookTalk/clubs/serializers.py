@@ -1,20 +1,35 @@
 from rest_framework import serializers
-from clubs.models import ClubModel, GenresModel, CityModel
+
+from authorisation.models import User
+from clubs.models import ClubModel, GenresModel, CityModel, MeetingModel
+
+
+class ClubRequestSerializer(serializers.Serializer):
+    club_id = serializers.CharField(required=True)
+
+    class Meta:
+        fields = ['club_id']
+
+
+class MeetingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MeetingModel
+        fields = '__all__'
 
 
 class ClubCardSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    description = serializers.CharField()
-    city = serializers.SlugRelatedField(many=False, read_only=True, slug_field='name')
-    interests = serializers.SlugRelatedField(many=True, read_only=False, slug_field='name',
-                                             queryset=GenresModel.objects.all())
+    meetings = MeetingSerializer(many=True, read_only=True)
 
     class Meta:
         model = ClubModel
-        fields = ('id', 'name', 'description', 'city', 'interests')
+        fields = ('id', 'name', 'description', 'admin', 'city', 'interests', 'meetings')
         read_only_fields = ('id', 'city')
         many = False
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['meetings'] = MeetingSerializer(instance.meetings.all(), many=True).data
+        return representation
 
 
 class ClubCardSerializerRequest(serializers.ModelSerializer):
@@ -32,6 +47,7 @@ class ClubCreateSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     description = serializers.CharField()
+    admin_id = serializers.IntegerField()
     city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
 
 
@@ -45,6 +61,7 @@ class ClubPatchSerializer(serializers.Serializer):
     name = serializers.CharField()
     description = serializers.CharField()
     city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
+    admin = serializers.SlugRelatedField(many=False, slug_field='id', queryset=User.objects.all())
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():

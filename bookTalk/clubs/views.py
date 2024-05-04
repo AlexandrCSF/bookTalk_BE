@@ -1,21 +1,18 @@
+from django.contrib.auth import get_user_model
 from django.forms import model_to_dict
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, serializers, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from clubs.serializers import ClubCardSerializer, ClubCardSerializerRequest, ClubCreateSerializer, CitySerializer, \
-    ClubPatchSerializer
-from clubs.models import ClubModel, CityModel
+
+from authorisation.models import User
+from authorisation.serializers import UserSerializer, UserRequestSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
+from clubs.models import ClubModel, MeetingModel, UserClubModel
 
 
 class ClubCardView(generics.GenericAPIView):
     queryset = ClubModel.objects.all()
-
-    class ClubRequestSerializer(serializers.Serializer):
-        club_id = serializers.CharField(required=True)
-
-        class Meta:
-            fields = ['club_id']
 
     @swagger_auto_schema(query_serializer=ClubRequestSerializer(), responses={
         status.HTTP_200_OK: ClubCardSerializer()
@@ -24,9 +21,8 @@ class ClubCardView(generics.GenericAPIView):
         """
         Карточка Клуба
         """
-        serializer = self.ClubRequestSerializer(data=self.request.query_params)
-        serializer.is_valid(raise_exception=True)
-        club = ClubModel.objects.get(id=serializer.validated_data['club_id'])
+        club_id = self.request.query_params['club_id']
+        club = ClubModel.objects.get(id=club_id)
         serializer = ClubCardSerializer(club)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -70,10 +66,41 @@ class ClubCardView(generics.GenericAPIView):
         serializer = ClubPatchSerializer(club, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            response = ClubModel.objects.get(id = id)
+            response = ClubModel.objects.get(id=id)
             return Response(status=status.HTTP_200_OK, data=model_to_dict(response))
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
-    def get_city_by_fias(self, fias):
-        return CityModel.objects.get(city_fias=fias)
+
+class ClubUsersView(generics.ListAPIView):
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        club_id = self.request.query_params.get('club_id')
+        if club_id is None:
+            return get_user_model().objects.none()
+        return UserClubModel.objects.filter(club_id=club_id).values_list('user_id', flat=True)
+
+    @swagger_auto_schema(query_serializer=ClubRequestSerializer())
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        users = User.objects.filter(id__in=queryset)
+        serializer = self.get_serializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class MemberView(generics.GenericAPIView):
+    serializer_class = ClubCardSerializer
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user_id')
+        if user_id is None:
+            return UserClubModel.objects.none()
+        return UserClubModel.objects.filter(user_id=user_id).values_list('club_id', flat=True)
+
+    @swagger_auto_schema(query_serializer=UserRequestSerializer())
+    def get(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        clubs = ClubModel.objects.filter(id__in=queryset)
+        serializer = self.get_serializer(clubs,many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
