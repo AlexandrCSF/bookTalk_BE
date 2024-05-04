@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
 from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
-from clubs.models import ClubModel, MeetingModel, UserClubModel
+from clubs.models import ClubModel, UserClubModel
 
 
 class ClubCardView(generics.GenericAPIView):
@@ -102,5 +102,21 @@ class MemberView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         clubs = ClubModel.objects.filter(id__in=queryset)
-        serializer = self.get_serializer(clubs,many=True)
+        serializer = self.get_serializer(clubs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminView(generics.GenericAPIView):
+    serializer_class = ClubCardSerializer
+
+    def get_queryset(self):
+        user_id = self.request.query_params.get('user_id')
+        if user_id is None:
+            return ClubModel.objects.none()
+        return ClubModel.objects.filter(admin_id=user_id)
+
+    @swagger_auto_schema(query_serializer=UserRequestSerializer())
+    def get(self, request, *args, **kwargs):
+        clubs = self.get_queryset()
+        serializer = self.get_serializer(clubs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
