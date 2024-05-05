@@ -5,7 +5,7 @@ from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from authorisation.models import User
-from authorisation.serializers import UserRequestSerializer
+from authorisation.serializers import UserRequestSerializer, UserSerializer
 from clubs.models import UserClubModel, ClubModel
 from clubs.serializers import ClubRequestSerializer
 from meetings.models import MeetingModel, UserMeetingModel
@@ -16,16 +16,16 @@ from meetings.serializers import MeetingSerializer, MeetingRequestSerializer, Me
 class MeetingView(generics.GenericAPIView):
     queryset = MeetingModel.objects.all()
 
-    @swagger_auto_schema(query_serializer=ClubRequestSerializer(), responses={
+    @swagger_auto_schema(query_serializer=MeetingRequestSerializer(), responses={
         status.HTTP_200_OK: MeetingSerializer()
     })
     def get(self, request, *args, **kwargs):
         """
-        Списко встреч для клуба
+        Список пользователей,идущих на встречу
         """
-        club_id = self.request.query_params['club_id']
-        meeting = MeetingModel.objects.filter(club_id=club_id)
-        serializer = MeetingSerializer(meeting, many=True)
+        meeting = self.request.query_params['meeting_id']
+        users = User.objects.filter(id__in=UserMeetingModel.objects.filter(meeting=meeting).values_list("user",flat=True))
+        serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(query_serializer=MeetingRequestSerializer(),
@@ -94,3 +94,4 @@ class AttendanceView(generics.GenericAPIView):
             return Response(data={"user": model_to_dict(user), "meeting": model_to_dict(meeting)}, status=200)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User is not subscribed to club"})
+

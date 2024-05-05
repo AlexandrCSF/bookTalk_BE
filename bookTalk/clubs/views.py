@@ -7,8 +7,11 @@ from rest_framework.response import Response
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, SubscribeSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
+    SubscribeSerializer
 from clubs.models import ClubModel, UserClubModel
+from meetings.models import MeetingModel
+from meetings.serializers import MeetingSerializer
 
 
 class ClubCardView(generics.GenericAPIView):
@@ -129,3 +132,19 @@ class SubscribeView(generics.GenericAPIView):
         club = ClubModel.objects.get(id=self.request.query_params['club_id'])
         UserClubModel.objects.create(user=user, club=club)
         return Response(data={"user": model_to_dict(user), "club": model_to_dict(club)}, status=200)
+
+
+class MeetingView(generics.GenericAPIView):
+    queryset = MeetingModel.objects.all()
+
+    @swagger_auto_schema(query_serializer=ClubRequestSerializer(), responses={
+        status.HTTP_200_OK: MeetingSerializer()
+    })
+    def get(self, request, *args, **kwargs):
+        """
+        Список встреч для клуба
+        """
+        club_id = self.request.query_params['club_id']
+        meeting = MeetingModel.objects.filter(club_id=club_id)
+        serializer = MeetingSerializer(meeting, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
