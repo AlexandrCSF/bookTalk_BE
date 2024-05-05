@@ -60,6 +60,9 @@ class MeetingView(generics.GenericAPIView):
                          query_serializer=MeetingRequestSerializer(),
                          responses={200: MeetingSerializer()})
     def patch(self, request, *args, **kwargs):
+        """
+        Редактирование встречи
+        """
         id = request.query_params.get('meeting_id')
         if not id:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'meeting_id is required'})
@@ -78,6 +81,9 @@ class MeetingView(generics.GenericAPIView):
 class AttendanceView(generics.GenericAPIView):
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получить список пользователей, идущих на встречу
+        """
         user = User.objects.get(id=self.request.query_params['user_id'])
         meetings = MeetingModel.objects.filter(id__in=UserMeetingModel.objects.filter(user=user).values_list("meeting",flat=True))
         serializer = MeetingSerializer(meetings,many=True)
@@ -85,6 +91,9 @@ class AttendanceView(generics.GenericAPIView):
 
     @swagger_auto_schema(query_serializer=IWillAttendSerializer())
     def post(self, request, *args, **kwargs):
+        """
+        Пользователь пойдет на встречу
+        """
         user = User.objects.get(id=self.request.query_params['user_id'])
         meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
         club = meeting.club

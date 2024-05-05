@@ -60,6 +60,9 @@ class ClubCardView(generics.GenericAPIView):
                          query_serializer=ClubRequestSerializer(),
                          responses={200: ClubCardSerializer()})
     def patch(self, request, *args, **kwargs):
+        """
+        Редактирование клуба
+        """
         id = request.query_params.get('club_id')
         if not id:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'club_id is required'})
@@ -86,6 +89,9 @@ class ClubUsersView(generics.ListAPIView):
 
     @swagger_auto_schema(query_serializer=ClubRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получить список пользователей для клуба
+        """
         queryset = self.get_queryset()
         users = User.objects.filter(id__in=queryset)
         serializer = self.get_serializer(users, many=True)
@@ -103,6 +109,9 @@ class MemberView(generics.GenericAPIView):
 
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получить список клубов, в которые вступил пользователь
+        """
         queryset = self.get_queryset()
         clubs = ClubModel.objects.filter(id__in=queryset)
         serializer = self.get_serializer(clubs, many=True)
@@ -120,6 +129,9 @@ class AdminView(generics.GenericAPIView):
 
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получить список клубов, которыми управляет пользователь
+        """
         clubs = self.get_queryset()
         serializer = self.get_serializer(clubs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -128,6 +140,9 @@ class AdminView(generics.GenericAPIView):
 class SubscribeView(generics.GenericAPIView):
     @swagger_auto_schema(query_serializer=SubscribeSerializer())
     def post(self, request, *args, **kwargs):
+        """
+        Вступить в клуб
+        """
         user = User.objects.get(id=self.request.query_params['user_id'])
         club = ClubModel.objects.get(id=self.request.query_params['club_id'])
         UserClubModel.objects.create(user=user, club=club)

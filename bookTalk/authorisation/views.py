@@ -13,12 +13,18 @@ class UserView(generics.GenericAPIView):
 
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получение пользователя
+        """
         id = self.request.query_params['user_id']
         user = User.objects.get(id=id)
         return Response(UserSerializer(user).data, status=200)
 
     @swagger_auto_schema(request_body=UserSerializer())
     def post(self, request, *args, **kwargs):
+        """
+        Добавление пользователя
+        """
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -29,6 +35,9 @@ class UserView(generics.GenericAPIView):
     @swagger_auto_schema(request_body=UserPatchSerializer(),
                          query_serializer=UserRequestSerializer())
     def patch(self, request, *args, **kwargs):
+        """
+        Редактирование пользователя
+        """
         user_id = request.query_params.get('user_id')
         if not user_id:
             return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
