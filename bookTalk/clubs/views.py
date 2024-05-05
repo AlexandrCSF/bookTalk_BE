@@ -1,13 +1,13 @@
 from django.contrib.auth import get_user_model
 from django.forms import model_to_dict
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics, serializers, status
+from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, SubscribeSerializer
 from clubs.models import ClubModel, UserClubModel
 
 
@@ -40,7 +40,7 @@ class ClubCardView(generics.GenericAPIView):
         return Response(status=status.HTTP_200_OK, data=data)
 
     @swagger_auto_schema(request_body=ClubCreateSerializer())
-    def post(self, request, *args, **kwargs):
+    def put(self, request, *args, **kwargs):
         """
         Добавление клуба
         """
@@ -120,3 +120,12 @@ class AdminView(generics.GenericAPIView):
         clubs = self.get_queryset()
         serializer = self.get_serializer(clubs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class SubscribeView(generics.GenericAPIView):
+    @swagger_auto_schema(query_serializer=SubscribeSerializer())
+    def post(self, request, *args, **kwargs):
+        user = User.objects.get(id=self.request.query_params['user_id'])
+        club = ClubModel.objects.get(id=self.request.query_params['club_id'])
+        UserClubModel.objects.create(user=user, club=club)
+        return Response(data={"user": model_to_dict(user), "club": model_to_dict(club)}, status=200)

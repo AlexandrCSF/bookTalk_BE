@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from authorisation.models import User
-from clubs.models import ClubModel, GenresModel, CityModel, MeetingModel
+from clubs.models import ClubModel, GenresModel, CityModel
+from meetings.serializers import MeetingSerializer
 
 
 class ClubRequestSerializer(serializers.Serializer):
@@ -9,12 +10,6 @@ class ClubRequestSerializer(serializers.Serializer):
 
     class Meta:
         fields = ['club_id']
-
-
-class MeetingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MeetingModel
-        fields = '__all__'
 
 
 class ClubCardSerializer(serializers.ModelSerializer):
@@ -68,3 +63,8 @@ class ClubPatchSerializer(serializers.Serializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class SubscribeSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    club_id = serializers.IntegerField()

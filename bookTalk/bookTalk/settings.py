@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'authorisation',
     'clubs',
     'genres',
-    'conversations'
+    'conversations',
+    'meetings'
 ]
 
 MIDDLEWARE = [
