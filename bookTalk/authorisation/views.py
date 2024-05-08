@@ -1,10 +1,15 @@
+import secrets
+
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from authorisation.models import User
-from authorisation.serializers import UserRequestSerializer, UserSerializer, UserPatchSerializer
+from authorisation.serializers import UserRequestSerializer, UserSerializer, UserPatchSerializer, FreeTokenSerializer, \
+    FreeTokenSerializerRequest
 
 
 class UserView(generics.GenericAPIView):
@@ -53,3 +58,24 @@ class UserView(generics.GenericAPIView):
             return Response(serializer.data)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FreeTokenView(generics.GenericAPIView):
+    serializer_class = FreeTokenSerializer
+
+    @swagger_auto_schema(request_body=FreeTokenSerializerRequest())
+    def post(self, request):
+        try:
+            user, created = User.objects.get_or_create(
+                uuid=request.data['uuid'], is_verified=False, is_active=True,
+                defaults={'username': secrets.token_hex(16)})
+            if created:
+                user.save()
+        except User.MultipleObjectsReturned:
+            user = User.objects.filter(uuid=request.data['uuid'], is_verified=False, is_active=True).first()
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            'access_token': str(refresh.access_token),
+            'refresh_token': str(refresh),
+            'user_id': user.id
+        }, status=200)
