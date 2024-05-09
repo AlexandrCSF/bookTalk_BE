@@ -65,7 +65,6 @@ class FreeTokenView(generics.GenericAPIView):
 
     @swagger_auto_schema(request_body=FreeTokenSerializerRequest())
     def post(self, request):
-        """ПОМОГИТЕ НАСТРОИТЬ ЭТУ ЗАЛУПУ"""
         try:
             user, created = User.objects.get_or_create(
                 uuid=request.data['uuid'], is_verified=False, is_active=True,
