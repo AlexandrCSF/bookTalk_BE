@@ -62,7 +62,6 @@ class UserView(generics.GenericAPIView):
 
 class FreeTokenView(generics.GenericAPIView):
     serializer_class = FreeTokenSerializer
-    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(request_body=FreeTokenSerializerRequest())
     def post(self, request):
