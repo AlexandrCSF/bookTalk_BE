@@ -79,6 +79,9 @@ class MeetingView(generics.GenericAPIView):
 
 
 class AttendanceView(generics.GenericAPIView):
+    serializer_class = MeetingSerializer
+
+
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
         """

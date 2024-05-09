@@ -138,6 +138,8 @@ class AdminView(generics.GenericAPIView):
 
 
 class SubscribeView(generics.GenericAPIView):
+    serializer_class = SubscribeSerializer
+
     @swagger_auto_schema(query_serializer=SubscribeSerializer())
     def post(self, request, *args, **kwargs):
         """
