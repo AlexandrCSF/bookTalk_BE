@@ -26,7 +26,8 @@ schema_view = get_schema_view(
         title="bookTalk API",
         default_version="v1"
     ),
-    permission_classes=(permissions.AllowAny,),
+    public=True,
+    permission_classes=(permissions.AllowAny, ),
 )
 
 urlpatterns = [
