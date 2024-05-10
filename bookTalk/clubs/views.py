@@ -42,7 +42,7 @@ class ClubCardView(generics.GenericAPIView):
         club.delete()
         return Response(status=status.HTTP_200_OK, data=data)
 
-    @swagger_auto_schema(request_body=ClubCreateSerializer())
+    @swagger_auto_schema(request_body=ClubCreateSerializer(),responses={200: ClubCardSerializer()})
     def put(self, request, *args, **kwargs):
         """
         Добавление клуба
@@ -53,8 +53,7 @@ class ClubCardView(generics.GenericAPIView):
         city = new_club.pop('city_fias')
         new_club['city'] = city
         ClubModel.objects.create(**new_club)
-        new_club['city'] = model_to_dict(city)
-        return Response(status=status.HTTP_200_OK, data=new_club)
+        return Response(status=status.HTTP_200_OK, data=ClubCardSerializer(ClubModel.objects.get(id=new_club['id'])).data)
 
     @swagger_auto_schema(request_body=ClubPatchSerializer(),
                          query_serializer=ClubRequestSerializer(),
