@@ -11,7 +11,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserPatchSerializer, \
-    FreeTokenSerializerRequest, FreeTokenSerializer, TokenRefreshSerializerRequest
+    UserUUidSerializerRequest, FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer
+from clubs.models import CityModel
 
 
 class UserView(generics.GenericAPIView):
@@ -27,45 +28,56 @@ class UserView(generics.GenericAPIView):
         user = User.objects.get(id=id)
         return Response(UserSerializer(user).data, status=200)
 
-    @swagger_auto_schema(request_body=UserSerializer())
+    @swagger_auto_schema(request_body=UserCreateSerializer(),
+                         query_serializer=UserUUidSerializerRequest())
     def post(self, request, *args, **kwargs):
         """
         Добавление пользователя
         """
+        uuid = self.request.query_params.get('uuid')
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
-        user = User.objects.create_user(**validated_data)
-        user.save()
-        return Response(data=serializer.data, status=status.HTTP_201_CREATED)
-
-    @swagger_auto_schema(request_body=UserPatchSerializer(),
-                         query_serializer=UserRequestSerializer())
-    def patch(self, request, *args, **kwargs):
-        """
-        Редактирование пользователя
-        """
-        user_id = request.query_params.get('user_id')
-        if not user_id:
-            return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-
-        try:
-            user = User.objects.get(pk=user_id)
-        except User.DoesNotExist:
-            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = UserPatchSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
+        user = User.objects.filter(uuid=uuid).first()
+        if user:
+            serializer = UserSerializer(user, data=validated_data, partial=True)
+            validated_data['city'] = validated_data['city'].city_fias
+            serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data)
+            return Response(data=serializer.data, status=status.HTTP_200_OK)
         else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            user = User.objects.create_user(**validated_data)
+            user.uuid = uuid
+            user.save()
+            return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    # @swagger_auto_schema(request_body=UserPatchSerializer(),
+    #                      query_serializer=UserRequestSerializer())
+    # def patch(self, request, *args, **kwargs):
+    #     """
+    #     Редактирование пользователя
+    #     """
+    #     user_id = request.query_params.get('user_id')
+    #     if not user_id:
+    #         return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     try:
+    #         user = User.objects.get(pk=user_id)
+    #     except User.DoesNotExist:
+    #         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+    #
+    #     serializer = UserPatchSerializer(user, data=request.data, partial=True)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data)
+    #     else:
+    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class FreeTokenView(generics.GenericAPIView):
     serializer_class = FreeTokenSerializer
 
-    @swagger_auto_schema(request_body=FreeTokenSerializerRequest(), responses={200: FreeTokenSerializer()})
+    @swagger_auto_schema(request_body=UserUUidSerializerRequest(), responses={200: FreeTokenSerializer()})
     def post(self, request):
         try:
             user, created = User.objects.get_or_create(
