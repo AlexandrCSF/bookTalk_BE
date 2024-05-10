@@ -1,17 +1,12 @@
-from django.contrib.auth.models import update_last_login
 from rest_framework import serializers
 from authorisation.models import User
-from rest_framework_simplejwt.exceptions import TokenError
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.settings import api_settings
-from rest_framework_simplejwt.tokens import RefreshToken
-from django.utils.translation import gettext_lazy as _
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid', 'refresh_token']
+        fields = ['id', 'is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
+                  'refresh_token']
         extra_kwargs = {
             'is_superuser': {'required': False},
             'username': {'required': False},
@@ -41,7 +36,6 @@ class UserPatchSerializer(serializers.ModelSerializer):
 
 
 class FreeTokenSerializer(serializers.Serializer):
-    user_uuid = serializers.CharField()
     user_id = serializers.IntegerField(read_only=True)
     access_token = serializers.CharField(read_only=True)
     refresh_token = serializers.CharField(read_only=True)
@@ -49,3 +43,7 @@ class FreeTokenSerializer(serializers.Serializer):
 
 class FreeTokenSerializerRequest(serializers.Serializer):
     uuid = serializers.UUIDField(required=True)
+
+
+class TokenRefreshSerializerRequest(serializers.Serializer):
+    refresh = serializers.CharField()
