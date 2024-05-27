@@ -1,4 +1,5 @@
 import secrets
+import uuid
 from datetime import datetime
 
 from django.conf import settings
@@ -10,10 +11,37 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authorisation.models import User
-from authorisation.serializers import UserRequestSerializer, UserSerializer, UserPatchSerializer, \
-    UserUUidSerializerRequest, FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer
-from clubs.models import CityModel
+from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
+    FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer
 from genres.models import GenresModel
+from utils.view import BaseView
+
+
+class AuthorisationView(generics.GenericAPIView, BaseView):
+    queryset = User.objects.all()
+    serializer_class = FreeTokenSerializer
+
+    @swagger_auto_schema(request_body=LoginSerializer, responses={status.HTTP_200_OK: FreeTokenSerializer()})
+    def post(self, request):
+        """
+        Войти в профиль
+        """
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            login = serializer.data.get('login')
+            password = serializer.data.get('password')
+            user = User.objects.filter(username=login,password=password).first()
+            refresh = self.update_token(user)
+            if user is not None:
+                return Response({
+                    'access_token': str(refresh['access_token']),
+                    'refresh_token': str(refresh['refresh_token']),
+                    'user_id': refresh['user_id']
+                }, status=200)
+            else:
+                return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Invalid username or password'})
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
 class UserView(generics.GenericAPIView):
@@ -63,30 +91,8 @@ class UserView(generics.GenericAPIView):
             user.save()
             return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
-    # @swagger_auto_schema(request_body=UserPatchSerializer(),
-    #                      query_serializer=UserRequestSerializer())
-    # def patch(self, request, *args, **kwargs):
-    #     """
-    #     Редактирование пользователя
-    #     """
-    #     user_id = request.query_params.get('user_id')
-    #     if not user_id:
-    #         return Response({'error': 'user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-    #
-    #     try:
-    #         user = User.objects.get(pk=user_id)
-    #     except User.DoesNotExist:
-    #         return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-    #
-    #     serializer = UserPatchSerializer(user, data=request.data, partial=True)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         return Response(serializer.data)
-    #     else:
-    #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class FreeTokenView(generics.GenericAPIView):
+class FreeTokenView(generics.GenericAPIView, BaseView):
     serializer_class = FreeTokenSerializer
 
     @swagger_auto_schema(request_body=UserUUidSerializerRequest(), responses={200: FreeTokenSerializer()})
@@ -100,21 +106,11 @@ class FreeTokenView(generics.GenericAPIView):
         except User.MultipleObjectsReturned:
             user = User.objects.filter(uuid=request.data['uuid'], is_verified=False, is_active=True).first()
 
-        refresh = RefreshToken.for_user(user)
-        if user.refresh_token:
-            old_token = OutstandingToken.objects.filter(token=user.refresh_token)
-            if old_token:
-                BlacklistedToken.objects.create(token=old_token.first())
-                old_token.first().delete()
-            if not OutstandingToken.objects.filter(token=refresh):
-                OutstandingToken.objects.create(token=refresh, expires_at=datetime.now() + settings.SIMPLE_JWT[
-                    'ACCESS_TOKEN_LIFETIME'])
-        user.refresh_token = refresh
-        user.save()
+        refresh = self.update_token(user)
         return Response({
-            'access_token': str(refresh.access_token),
-            'refresh_token': str(refresh),
-            'user_id': user.id
+            'access_token': str(refresh['access_token']),
+            'refresh_token': str(refresh['refresh_token']),
+            'user_id': refresh['user_id']
         }, status=200)
 
 
@@ -127,7 +123,6 @@ class RefreshTokenView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         refresh_token = serializer.validated_data['refresh']
         token = RefreshToken(refresh_token)
-
         access_token = str(token.access_token)
 
         user_id = token.access_token.get('user_id')

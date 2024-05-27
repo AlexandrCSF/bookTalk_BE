@@ -50,3 +50,7 @@ class UserUUidSerializerRequest(serializers.Serializer):
 
 class TokenRefreshSerializerRequest(serializers.Serializer):
     refresh = serializers.CharField()
+
+class LoginSerializer(serializers.Serializer):
+    login = serializers.CharField(required=True)
+    password = serializers.CharField(required=True)
