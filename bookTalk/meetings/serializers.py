@@ -9,7 +9,6 @@ class IWillAttendSerializer(serializers.Serializer):
 
 
 class MeetingCreateSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
     name = serializers.CharField()
     date = serializers.DateField()
     time = serializers.TimeField()

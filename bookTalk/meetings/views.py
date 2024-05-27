@@ -11,6 +11,7 @@ from clubs.serializers import ClubRequestSerializer
 from meetings.models import MeetingModel, UserMeetingModel
 from meetings.serializers import MeetingSerializer, MeetingRequestSerializer, MeetingCreateSerializer, \
     MeetingPatchSerializer, IWillAttendSerializer
+from utils.view import BaseView
 
 
 class MeetingView(generics.GenericAPIView):
@@ -24,7 +25,8 @@ class MeetingView(generics.GenericAPIView):
         Список пользователей,идущих на встречу
         """
         meeting = self.request.query_params['meeting_id']
-        users = User.objects.filter(id__in=UserMeetingModel.objects.filter(meeting=meeting).values_list("user",flat=True))
+        users = User.objects.filter(
+            id__in=UserMeetingModel.objects.filter(meeting=meeting).values_list("user", flat=True))
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -52,9 +54,11 @@ class MeetingView(generics.GenericAPIView):
         new_meeting = serializer.validated_data
         club = ClubModel.objects.get(id=request.query_params['club_id'])
         new_meeting['club'] = club
-        MeetingModel.objects.create(**new_meeting)
+        meeting = MeetingModel.objects.create(**new_meeting)
         new_meeting['club'] = model_to_dict(club)
-        return Response(status=status.HTTP_200_OK, data=new_meeting)
+        meeting_serializer = MeetingSerializer(data=new_meeting)
+        meeting_serializer.is_valid(raise_exception=True)
+        return Response(status=status.HTTP_200_OK, data=meeting_serializer.data)
 
     @swagger_auto_schema(request_body=MeetingPatchSerializer(),
                          query_serializer=MeetingRequestSerializer(),
@@ -78,26 +82,25 @@ class MeetingView(generics.GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
-class AttendanceView(generics.GenericAPIView):
-    serializer_class = MeetingSerializer
-
+class AttendanceView(generics.GenericAPIView, BaseView):
 
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
         """
-        Получить список пользователей, идущих на встречу
+        Получить список встреч, на которые идет пользователь
         """
         user = User.objects.get(id=self.request.query_params['user_id'])
-        meetings = MeetingModel.objects.filter(id__in=UserMeetingModel.objects.filter(user=user).values_list("meeting",flat=True))
-        serializer = MeetingSerializer(meetings,many=True)
-        return Response(serializer.data,status=200)
+        meetings = MeetingModel.objects.filter(
+            id__in=UserMeetingModel.objects.filter(user=user).values_list("meeting", flat=True))
+        serializer = MeetingSerializer(meetings, many=True)
+        return Response(serializer.data, status=200)
 
-    @swagger_auto_schema(query_serializer=IWillAttendSerializer())
+    @swagger_auto_schema(query_serializer=MeetingRequestSerializer())
     def post(self, request, *args, **kwargs):
         """
         Пользователь пойдет на встречу
         """
-        user = User.objects.get(id=self.request.query_params['user_id'])
+        user = User.objects.get(id = self.get_user())
         meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
         club = meeting.club
         subscribed = get_object_or_404(UserClubModel, user=user, club=club)
@@ -106,4 +109,3 @@ class AttendanceView(generics.GenericAPIView):
             return Response(data={"user": model_to_dict(user), "meeting": model_to_dict(meeting)}, status=200)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User is not subscribed to club"})
-
