@@ -13,6 +13,7 @@ from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserPatchSerializer, \
     UserUUidSerializerRequest, FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer
 from clubs.models import CityModel
+from genres.models import GenresModel
 
 
 class UserView(generics.GenericAPIView):
@@ -38,16 +39,27 @@ class UserView(generics.GenericAPIView):
         serializer = self.get_serializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
+        interests_list = validated_data.pop('interests')
         user = User.objects.filter(uuid=uuid).first()
         if user:
             serializer = UserSerializer(user, data=validated_data, partial=True)
             validated_data['city'] = validated_data['city'].city_fias
             serializer.is_valid(raise_exception=True)
+            interests = [
+                GenresModel.objects.get(name=name)
+                for name in interests_list
+            ]
+            user.interests.set(interests)
             serializer.save()
             return Response(data=serializer.data, status=status.HTTP_200_OK)
         else:
             user = User.objects.create_user(**validated_data)
             user.uuid = uuid
+            interests = [
+                GenresModel.objects.get(name=name)
+                for name in interests_list
+            ]
+            user.interests.set(interests)
             user.save()
             return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 

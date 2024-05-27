@@ -7,11 +7,12 @@ from rest_framework.response import Response
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
-    SubscribeSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
 from clubs.models import ClubModel, UserClubModel
+from genres.models import GenresModel
 from meetings.models import MeetingModel
 from meetings.serializers import MeetingSerializer
+from utils.view import BaseView
 
 
 class ClubCardView(generics.GenericAPIView):
@@ -42,7 +43,7 @@ class ClubCardView(generics.GenericAPIView):
         club.delete()
         return Response(status=status.HTTP_200_OK, data=data)
 
-    @swagger_auto_schema(request_body=ClubCreateSerializer(),responses={200: ClubCardSerializer()})
+    @swagger_auto_schema(request_body=ClubCreateSerializer(), responses={200: ClubCardSerializer()})
     def put(self, request, *args, **kwargs):
         """
         Добавление клуба
@@ -51,9 +52,17 @@ class ClubCardView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         new_club = serializer.validated_data
         city = new_club.pop('city_fias')
+        interests_list = new_club.pop('interests')
         new_club['city'] = city
-        ClubModel.objects.create(**new_club)
-        return Response(status=status.HTTP_200_OK, data=ClubCardSerializer(ClubModel.objects.get(id=new_club['id'])).data)
+        club = ClubModel.objects.create(**new_club)
+        interests = [
+            GenresModel.objects.get(name=name)
+            for name in interests_list
+        ]
+        club.interests.set(interests)
+
+        return Response(status=status.HTTP_200_OK,
+                        data=ClubCardSerializer(club).data)
 
     @swagger_auto_schema(request_body=ClubPatchSerializer(),
                          query_serializer=ClubRequestSerializer(),
@@ -117,6 +126,27 @@ class MemberView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+class RecommendsView(generics.GenericAPIView):
+    serializer_class = ClubCardSerializer
+
+    @swagger_auto_schema(query_serializer=UserRequestSerializer())
+    def get(self, request, *args, **kwargs):
+        """
+        Получить список клубов, рекомендованных для пользователя
+        """
+        user_id = request.query_params.get('user_id')
+        if not user_id:
+            return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
+        interests = user.interests.all()
+        clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
+        serializer = self.get_serializer(clubs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class AdminView(generics.GenericAPIView):
     serializer_class = ClubCardSerializer
 
@@ -136,17 +166,33 @@ class AdminView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class SubscribeView(generics.GenericAPIView):
-    serializer_class = SubscribeSerializer
+class SubscribeView(generics.GenericAPIView, BaseView):
 
-    @swagger_auto_schema(query_serializer=SubscribeSerializer())
+    @swagger_auto_schema(query_serializer=ClubRequestSerializer())
     def post(self, request, *args, **kwargs):
         """
         Вступить в клуб
         """
-        user = User.objects.get(id=self.request.query_params['user_id'])
+        user_id = self.get_user()
+        user = User.objects.get(id=user_id)
         club = ClubModel.objects.get(id=self.request.query_params['club_id'])
+        user_serializer = UserSerializer(user)
+        club_serializer = ClubCardSerializer(club)
         UserClubModel.objects.create(user=user, club=club)
+        return Response(data={"user": user_serializer.data, "club": club_serializer.data}, status=200)
+
+
+class UnsubscribeView(generics.GenericAPIView, BaseView):
+
+    @swagger_auto_schema(query_serializer=ClubRequestSerializer())
+    def post(self, request, *args, **kwargs):
+        """
+        Выйти из клуба
+        """
+        user_id = self.get_user()
+        user = User.objects.get(id = user_id)
+        club = ClubModel.objects.get(id=self.request.query_params['club_id'])
+        UserClubModel.objects.filter(user=user, club=club).delete()
         return Response(data={"user": model_to_dict(user), "club": model_to_dict(club)}, status=200)
 
 

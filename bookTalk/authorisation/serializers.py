@@ -7,17 +7,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
-                  'refresh_token']
-        extra_kwargs = {
-            'is_superuser': {'required': False},
-            'username': {'required': False},
-            'first_name': {'required': False},
-            'last_name': {'required': False},
-            'date_joined': {'required': False},
-            'email': {'required': False},
-            'city': {'required': False},
-            'refresh_token': {'required': False},
-        }
+                  'refresh_token', 'interests']
 
 
 class UserRequestSerializer(serializers.Serializer):
@@ -25,9 +15,15 @@ class UserRequestSerializer(serializers.Serializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    interests = serializers.ListField(
+        child=serializers.CharField(),
+        allow_empty=True,
+        required=False
+    )
+
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'date_joined', 'email', 'city']
+        fields = ['username', 'first_name', 'last_name', 'date_joined', 'email', 'city','interests']
 
 
 class UserPatchSerializer(serializers.ModelSerializer):
