@@ -190,7 +190,7 @@ class UnsubscribeView(generics.GenericAPIView, BaseView):
         Выйти из клуба
         """
         user_id = self.get_user()
-        user = User.objects.get(id = user_id)
+        user = User.objects.get(id=user_id)
         club = ClubModel.objects.get(id=self.request.query_params['club_id'])
         UserClubModel.objects.filter(user=user, club=club).delete()
         return Response(data={"user": model_to_dict(user), "club": model_to_dict(club)}, status=200)

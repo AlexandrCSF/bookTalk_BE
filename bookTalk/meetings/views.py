@@ -22,7 +22,7 @@ class MeetingView(generics.GenericAPIView):
     })
     def get(self, request, *args, **kwargs):
         """
-        Список пользователей,идущих на встречу
+        Список пользователей, идущих на встречу
         """
         meeting = self.request.query_params['meeting_id']
         users = User.objects.filter(
