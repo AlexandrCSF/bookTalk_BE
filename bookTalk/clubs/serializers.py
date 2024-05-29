@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from authorisation.models import User
+from authorisation.serializers import UserSerializer
 from clubs.models import ClubModel, GenresModel, CityModel
 from genres.serializers import GenresSerializer
 from meetings.serializers import MeetingSerializer
@@ -26,6 +27,7 @@ class ClubCardSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data
         representation['meetings'] = MeetingSerializer(instance.meetings.all(), many=True).data
+        representation['admin'] = UserSerializer(instance.admin).data
         return representation
 
 
