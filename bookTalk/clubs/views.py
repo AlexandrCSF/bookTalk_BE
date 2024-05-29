@@ -141,10 +141,15 @@ class RecommendsView(generics.GenericAPIView):
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
-        interests = user.interests.all()
-        clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
-        serializer = self.get_serializer(clubs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        if user.is_verified:
+            interests = user.interests.all()
+            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
+            serializer = self.get_serializer(clubs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            clubs = ClubModel.objects.all()[:10]
+            serializer = self.get_serializer(clubs, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class AdminView(generics.GenericAPIView):

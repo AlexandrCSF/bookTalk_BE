@@ -10,7 +10,7 @@ from clubs.models import UserClubModel, ClubModel
 from clubs.serializers import ClubRequestSerializer
 from meetings.models import MeetingModel, UserMeetingModel
 from meetings.serializers import MeetingSerializer, MeetingRequestSerializer, MeetingCreateSerializer, \
-    MeetingPatchSerializer, IWillAttendSerializer
+    MeetingPatchSerializer
 from utils.view import BaseView
 
 
