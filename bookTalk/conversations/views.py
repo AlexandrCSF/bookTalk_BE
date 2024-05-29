@@ -11,6 +11,7 @@ from clubs.models import ClubModel
 # Create your views here.
 
 class ConversationListCreateView(generics.ListCreateAPIView):
+    serializer_class = ConversationSerializer
 
     @swagger_auto_schema(query_serializer=ConversationRequestSerializer(),
                          responses={200: ConversationSerializer(many=True)})
@@ -32,6 +33,7 @@ class ConversationListCreateView(generics.ListCreateAPIView):
 
 class MessageListCreateView(generics.ListCreateAPIView):
     queryset = MessageModel.objects.all()
+    serializer_class = MessageSerializer
 
     @swagger_auto_schema(query_serializer=MessageListRequestSerializer(),
                          responses={200: MessageSerializer(many=True)})
