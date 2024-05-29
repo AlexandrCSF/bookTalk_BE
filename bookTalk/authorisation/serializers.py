@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from authorisation.models import User
 from clubs.models import CityModel
+from genres.serializers import GenresSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -8,6 +9,11 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
                   'refresh_token', 'interests']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data
+        return representation
 
 
 class UserRequestSerializer(serializers.Serializer):
@@ -23,7 +29,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'date_joined', 'email', 'city','interests']
+        fields = ['username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'interests']
 
 
 class UserPatchSerializer(serializers.ModelSerializer):
@@ -50,6 +56,7 @@ class UserUUidSerializerRequest(serializers.Serializer):
 
 class TokenRefreshSerializerRequest(serializers.Serializer):
     refresh = serializers.CharField()
+
 
 class LoginSerializer(serializers.Serializer):
     login = serializers.CharField(required=True)

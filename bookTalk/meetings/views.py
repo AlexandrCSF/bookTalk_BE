@@ -10,7 +10,7 @@ from clubs.models import UserClubModel, ClubModel
 from clubs.serializers import ClubRequestSerializer
 from meetings.models import MeetingModel, UserMeetingModel
 from meetings.serializers import MeetingSerializer, MeetingRequestSerializer, MeetingCreateSerializer, \
-    MeetingPatchSerializer, IWillAttendSerializer
+    MeetingPatchSerializer
 from utils.view import BaseView
 
 
@@ -22,7 +22,7 @@ class MeetingView(generics.GenericAPIView):
     })
     def get(self, request, *args, **kwargs):
         """
-        Список пользователей,идущих на встречу
+        Список пользователей, идущих на встречу
         """
         meeting = self.request.query_params['meeting_id']
         users = User.objects.filter(
