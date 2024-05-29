@@ -100,12 +100,29 @@ class AttendanceView(generics.GenericAPIView, BaseView):
         """
         Пользователь пойдет на встречу
         """
-        user = User.objects.get(id = self.get_user())
+        user = User.objects.get(id=self.get_user())
         meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
         club = meeting.club
         subscribed = get_object_or_404(UserClubModel, user=user, club=club)
         if subscribed:
             UserMeetingModel.objects.create(user=user, meeting=meeting)
-            return Response(data={"user": model_to_dict(user), "meeting": model_to_dict(meeting)}, status=200)
+            return Response(data={"user": UserSerializer(user).data, "meeting": MeetingSerializer(meeting).data}, status=200)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User is not subscribed to club"})
+
+
+class WontAttendView(generics.GenericAPIView, BaseView):
+
+    @swagger_auto_schema(query_serializer=MeetingRequestSerializer())
+    def post(self, request, *args, **kwargs):
+        """
+        Пользователь не пойдет на встречу
+        """
+        user = User.objects.get(id=self.get_user())
+        meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
+        will_attend = get_object_or_404(UserMeetingModel, user=user, meeting=meeting)
+        if will_attend:
+            UserMeetingModel.objects.get(user=user, meeting=meeting).delete()
+            return Response(data={"user": model_to_dict(user), "meeting": model_to_dict(meeting)}, status=200)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User will not attend on the meeting"})
