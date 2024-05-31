@@ -44,7 +44,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
-class UserView(generics.GenericAPIView,BaseView):
+class UserView(generics.GenericAPIView, BaseView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -70,7 +70,8 @@ class UserView(generics.GenericAPIView,BaseView):
         interests_list = validated_data.pop('interests')
         user = User.objects.filter(uuid=uuid).first()
         if user:
-            return Response(data={"Пользователь с таким uuid уже существует"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={"text": "Пользователь с таким uuid уже существует"},
+                            status=status.HTTP_400_BAD_REQUEST)
         else:
             user = User.objects.create_user(**validated_data)
             user.uuid = uuid
@@ -79,7 +80,7 @@ class UserView(generics.GenericAPIView,BaseView):
                 for name in interests_list
             ]
             user.interests.set(interests)
-            user.refresh_token = self.update_token(user)
+            user.refresh_token = self.update_token(user)['refresh_token']
             user.is_verified = True
             user.is_active = True
             user.save()
