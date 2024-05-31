@@ -3,12 +3,14 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
@@ -30,7 +32,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
         if serializer.is_valid():
             login = serializer.data.get('login')
             password = serializer.data.get('password')
-            user = User.objects.filter(username=login, password=password).first()
+            user = authenticate(username=login, password=password)
             refresh = self.update_token(user)
             if user is not None:
                 return Response({
