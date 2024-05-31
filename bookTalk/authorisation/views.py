@@ -95,8 +95,7 @@ class FreeTokenView(generics.GenericAPIView, BaseView):
     @swagger_auto_schema(request_body=UserUUidSerializerRequest(), responses={200: FreeTokenSerializer()})
     def post(self, request):
         try:
-            user, created = User.objects.get_or_create(
-                uuid=request.data['uuid'], is_verified=False, is_active=True,
+            user, created = User.objects.get_or_create(uuid=request.data['uuid'],
                 defaults={'username': secrets.token_hex(16)})
             if created:
                 user.save()

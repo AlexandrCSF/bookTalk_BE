@@ -11,9 +11,10 @@ class UserSerializer(serializers.ModelSerializer):
                   'refresh_token', 'interests']
 
     def to_representation(self, instance):
-        representation = super(UserSerializer, self).to_representation(instance)
+        representation = super().to_representation(instance)
         representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data
         return representation
+
 
 class UserRequestSerializer(serializers.Serializer):
     user_id = serializers.IntegerField()
@@ -55,6 +56,7 @@ class UserUUidSerializerRequest(serializers.Serializer):
 
 class TokenRefreshSerializerRequest(serializers.Serializer):
     refresh = serializers.CharField()
+
 
 class LoginSerializer(serializers.Serializer):
     login = serializers.CharField(required=True)
