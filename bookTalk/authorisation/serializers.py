@@ -7,7 +7,7 @@ from genres.serializers import GenresSerializer
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
+        fields = ['id', 'is_superuser', 'username', 'password', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
                   'refresh_token', 'interests']
 
     def to_representation(self, instance):
@@ -29,7 +29,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'interests']
+        fields = ['username', 'first_name', 'password', 'last_name', 'date_joined', 'email', 'city','interests']
 
 
 class UserPatchSerializer(serializers.ModelSerializer):

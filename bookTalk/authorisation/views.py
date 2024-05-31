@@ -3,12 +3,14 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings
+from django.contrib.auth.hashers import make_password
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import authenticate
 
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
@@ -30,7 +32,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
         if serializer.is_valid():
             login = serializer.data.get('login')
             password = serializer.data.get('password')
-            user = User.objects.filter(username=login,password=password).first()
+            user = authenticate(username=login, password=password)
             refresh = self.update_token(user)
             if user is not None:
                 return Response({
@@ -44,7 +46,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
-class UserView(generics.GenericAPIView):
+class UserView(generics.GenericAPIView, BaseView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
@@ -61,25 +63,17 @@ class UserView(generics.GenericAPIView):
                          query_serializer=UserUUidSerializerRequest())
     def post(self, request, *args, **kwargs):
         """
-        Добавление пользователя
+        Добавление пользователя(Регистрация)
         """
         uuid = self.request.query_params.get('uuid')
-        serializer = self.get_serializer(data=self.request.data)
+        serializer = UserCreateSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
         interests_list = validated_data.pop('interests')
         user = User.objects.filter(uuid=uuid).first()
         if user:
-            serializer = UserSerializer(user, data=validated_data, partial=True)
-            validated_data['city'] = validated_data['city'].city_fias
-            serializer.is_valid(raise_exception=True)
-            interests = [
-                GenresModel.objects.get(name=name)
-                for name in interests_list
-            ]
-            user.interests.set(interests)
-            serializer.save()
-            return Response(data=serializer.data, status=status.HTTP_200_OK)
+            return Response(data={"text": "Пользователь с таким uuid уже существует"},
+                            status=status.HTTP_400_BAD_REQUEST)
         else:
             user = User.objects.create_user(**validated_data)
             user.uuid = uuid
@@ -88,6 +82,9 @@ class UserView(generics.GenericAPIView):
                 for name in interests_list
             ]
             user.interests.set(interests)
+            user.refresh_token = self.update_token(user)['refresh_token']
+            user.is_verified = True
+            user.is_active = True
             user.save()
             return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
