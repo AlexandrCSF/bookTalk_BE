@@ -5,6 +5,7 @@ class ElasticClient:
     def __init__(self):
         self.url = "localhost:9200"
         self.client = Elasticsearch(hosts=self.url, transport_class=Transport)
+        self.index = "booktalk"
 
     def search(self, query):
         request = {
@@ -20,3 +21,6 @@ class ElasticClient:
 
     def bulk(self, dict_to_send):
         self.client.bulk(index=self.client.index, body=dict_to_send)
+
+    def indices(self):
+        return self.client.indices

@@ -25,6 +25,7 @@ class ClubCardSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data
+        representation['city'] = CitySerializer(instance.city).data
         representation['meetings'] = MeetingSerializer(instance.meetings.all(), many=True).data
         return representation
 
