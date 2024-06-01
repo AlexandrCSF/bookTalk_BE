@@ -43,7 +43,8 @@ INSTALLED_APPS = [
     'clubs',
     'genres',
     'conversations',
-    'meetings'
+    'meetings',
+    'search'
 ]
 
 AUTH_USER_MODEL = 'authorisation.User'
