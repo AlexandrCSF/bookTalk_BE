@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings
-from django.contrib.auth.hashers import make_password
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
@@ -11,7 +10,6 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
     FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer
@@ -91,18 +89,11 @@ class UserView(generics.GenericAPIView, BaseView):
 
 class FreeTokenView(generics.GenericAPIView, BaseView):
     serializer_class = FreeTokenSerializer
+    authentication_classes = []
 
     @swagger_auto_schema(request_body=UserUUidSerializerRequest(), responses={200: FreeTokenSerializer()})
     def post(self, request):
-        try:
-            user, created = User.objects.get_or_create(uuid=request.data['uuid'],
-                defaults={'username': secrets.token_hex(16)})
-            if created:
-                user.save()
-        except User.MultipleObjectsReturned:
-            user = User.objects.filter(uuid=request.data['uuid'], is_verified=False, is_active=True).first()
-
-        refresh = self.update_token(user)
+        refresh = self.update_token(User.objects.get(username='Not_authorised_user'))
         return Response({
             'access_token': str(refresh['access_token']),
             'refresh_token': str(refresh['refresh_token']),
