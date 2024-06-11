@@ -114,6 +114,10 @@ REST_FRAMEWORK = {
     #     'rest_framework.permissions.IsAuthenticated'
     # ]
 }
+AUTHENTICATION_BACKENDS = (
+    'bookTalk.backends.EmailAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+)
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),

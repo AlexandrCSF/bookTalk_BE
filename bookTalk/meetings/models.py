@@ -13,7 +13,6 @@ class MeetingModel(models.Model):
     location = models.CharField(max_length=150)
 
 
-
 class UserMeetingModel(models.Model):
     id = models.AutoField(primary_key=True)
     user = models.ForeignKey('authorisation.User', on_delete=models.CASCADE)
