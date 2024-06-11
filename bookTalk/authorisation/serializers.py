@@ -59,5 +59,5 @@ class TokenRefreshSerializerRequest(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    login = serializers.CharField(required=True)
+    email = serializers.CharField(required=True)
     password = serializers.CharField(required=True)

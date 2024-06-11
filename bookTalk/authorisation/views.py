@@ -15,6 +15,8 @@ from authorisation.serializers import UserRequestSerializer, UserSerializer, Use
     FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer
 from genres.models import GenresModel
 from utils.view import BaseView
+from django.contrib.auth import get_user_model
+from django.contrib.auth.backends import BaseBackend
 
 
 class AuthorisationView(generics.GenericAPIView, BaseView):
@@ -28,18 +30,18 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
         """
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
-            login = serializer.data.get('login')
+            email = serializer.data.get('email')
             password = serializer.data.get('password')
-            user = authenticate(username=login, password=password)
-            refresh = self.update_token(user)
+            user = User.objects.filter(email=email, password=password).first()
             if user is not None:
+                refresh = self.update_token(user)
                 return Response({
                     'access_token': str(refresh['access_token']),
                     'refresh_token': str(refresh['refresh_token']),
                     'user_id': refresh['user_id']
                 }, status=200)
             else:
-                return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Invalid username or password'})
+                return Response(status=status.HTTP_400_BAD_REQUEST, data={'message': 'Invalid email or password'})
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
