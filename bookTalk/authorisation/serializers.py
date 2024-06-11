@@ -1,13 +1,15 @@
 from rest_framework import serializers
 from authorisation.models import User
 from clubs.models import CityModel
+from genres.models import GenresModel
 from genres.serializers import GenresSerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'is_superuser', 'username', 'password', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'uuid',
+        fields = ['id', 'is_superuser', 'username', 'password', 'first_name', 'last_name', 'date_joined', 'email',
+                  'city', 'uuid',
                   'refresh_token', 'interests']
 
     def to_representation(self, instance):
@@ -21,15 +23,10 @@ class UserRequestSerializer(serializers.Serializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    interests = serializers.ListField(
-        child=serializers.CharField(),
-        allow_empty=True,
-        required=False
-    )
 
     class Meta:
         model = User
-        fields = ['username', 'first_name', 'password', 'last_name', 'date_joined', 'email', 'city','interests']
+        fields = ['username', 'first_name', 'password', 'last_name', 'date_joined', 'email', 'city', 'interests']
 
 
 class UserPatchSerializer(serializers.ModelSerializer):

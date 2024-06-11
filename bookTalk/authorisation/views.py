@@ -9,14 +9,11 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from django.contrib.auth import authenticate
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
     FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer
 from genres.models import GenresModel
 from utils.view import BaseView
-from django.contrib.auth import get_user_model
-from django.contrib.auth.backends import BaseBackend
 
 
 class AuthorisationView(generics.GenericAPIView, BaseView):
@@ -66,6 +63,9 @@ class UserView(generics.GenericAPIView, BaseView):
         Добавление пользователя(Регистрация)
         """
         uuid = self.request.query_params.get('uuid')
+        interests_list = self.request.data['interests']
+        interests = GenresModel.objects.filter(name__in=interests_list).values_list('id', flat=True)
+        self.request.data['interests'] = interests
         serializer = UserCreateSerializer(data=self.request.data)
         serializer.is_valid(raise_exception=True)
         validated_data = serializer.validated_data
@@ -77,10 +77,7 @@ class UserView(generics.GenericAPIView, BaseView):
         else:
             user = User.objects.create_user(**validated_data)
             user.uuid = uuid
-            interests = [
-                GenresModel.objects.get(name=name)
-                for name in interests_list
-            ]
+            interests = interests_list
             user.interests.set(interests)
             user.refresh_token = self.update_token(user)['refresh_token']
             user.is_verified = True
