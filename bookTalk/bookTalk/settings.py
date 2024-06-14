@@ -84,12 +84,15 @@ WSGI_APPLICATION = 'bookTalk.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'bookTalk',
+        'NAME': 'booktalk',
         'USER': 'root',
-        'HOST': 'localhost',
+        'PASSWORD': 'secretpass',
+        'HOST': '158.160.29.190',
         'PORT': '3306',
     }
 }
+
+123
 
 AUTH_PASSWORD_VALIDATORS = [
     {
