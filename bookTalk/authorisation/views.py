@@ -3,15 +3,17 @@ import uuid
 from datetime import datetime
 
 from django.conf import settings
+from django.forms import model_to_dict
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
+from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from authorisation.models import User
 from authorisation.serializers import UserRequestSerializer, UserSerializer, UserUUidSerializerRequest, \
-    FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer
+    FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer, UserPatchSerializer
 from genres.models import GenresModel
 from utils.view import BaseView
 
@@ -84,6 +86,27 @@ class UserView(generics.GenericAPIView, BaseView):
             user.is_active = True
             user.save()
             return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
+
+    @swagger_auto_schema(request_body=UserPatchSerializer(),
+                         query_serializer=UserRequestSerializer(),
+                         responses={200: UserSerializer()})
+    def patch(self, request, *args, **kwargs):
+        """
+        Редактирование клуба
+        """
+        id = request.query_params.get('user_id')
+        if not id:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'user_id is required'})
+
+        user = get_object_or_404(User, id=id)
+
+        serializer = UserPatchSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            response = User.objects.get(id=id)
+            return Response(status=status.HTTP_200_OK, data=model_to_dict(response))
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
 class FreeTokenView(generics.GenericAPIView, BaseView):
