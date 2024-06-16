@@ -31,7 +31,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
         if serializer.is_valid():
             email = serializer.data.get('email')
             password = serializer.data.get('password')
-            user = authenticate(email=email, password=password).first()
+            user = User.objects.filter(email=email, password=password).first()
             if user is not None:
                 refresh = self.update_token(user)
                 return Response({
@@ -107,8 +107,8 @@ class UserView(generics.GenericAPIView, BaseView):
         serializer = UserPatchSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            response = User.objects.get(id=id)
-            return Response(status=status.HTTP_200_OK, data=model_to_dict(response))
+            response = UserSerializer(User.objects.get(id=id))
+            return Response(status=status.HTTP_200_OK, data=response.data)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 

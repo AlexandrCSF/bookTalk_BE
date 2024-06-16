@@ -33,7 +33,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 class UserPatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city']
+        fields = ['is_superuser', 'username', 'first_name', 'last_name', 'date_joined', 'email', 'city', 'password']
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
