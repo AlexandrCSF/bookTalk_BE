@@ -16,7 +16,7 @@ from authorisation.serializers import UserRequestSerializer, UserSerializer, Use
     FreeTokenSerializer, TokenRefreshSerializerRequest, UserCreateSerializer, LoginSerializer, UserPatchSerializer
 from genres.models import GenresModel
 from utils.view import BaseView
-
+from django.contrib.auth import authenticate
 
 class AuthorisationView(generics.GenericAPIView, BaseView):
     queryset = User.objects.all()
@@ -31,7 +31,7 @@ class AuthorisationView(generics.GenericAPIView, BaseView):
         if serializer.is_valid():
             email = serializer.data.get('email')
             password = serializer.data.get('password')
-            user = User.objects.filter(email=email, password=password).first()
+            user = authenticate(email=email, password=password).first()
             if user is not None:
                 refresh = self.update_token(user)
                 return Response({
@@ -87,6 +87,7 @@ class UserView(generics.GenericAPIView, BaseView):
             user.refresh_token = self.update_token(user)['refresh_token']
             user.is_verified = True
             user.is_active = True
+            user.password = request.data['password']
             user.save()
             return Response(data=UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
