@@ -64,14 +64,18 @@ class UserView(generics.GenericAPIView, BaseView):
         """
         Добавление пользователя(Регистрация)
         """
-        uuid = self.request.query_params.get('uuid')
-        interests_list = self.request.data['interests']
-        interests = GenresModel.objects.filter(name__in=interests_list).values_list('id', flat=True)
-        self.request.data['interests'] = interests
-        serializer = UserCreateSerializer(data=self.request.data)
+        uuid = request.query_params.get('uuid')
+        if 'interests' in request.data:
+            interests_list = request.data['interests']
+            interests = GenresModel.objects.filter(name__in=interests_list).values_list('id', flat=True)
+            request.data['interests'] = interests
+
+        serializer = UserCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+
         validated_data = serializer.validated_data
         interests_list = validated_data.pop('interests')
+
         user = User.objects.filter(uuid=uuid).first()
         if user:
             return Response(data={"text": "Пользователь с таким uuid уже существует"},
@@ -79,8 +83,7 @@ class UserView(generics.GenericAPIView, BaseView):
         else:
             user = User.objects.create_user(**validated_data)
             user.uuid = uuid
-            interests = interests_list
-            user.interests.set(interests)
+            user.interests.set(interests_list)
             user.refresh_token = self.update_token(user)['refresh_token']
             user.is_verified = True
             user.is_active = True

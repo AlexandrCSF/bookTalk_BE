@@ -23,6 +23,7 @@ class UserRequestSerializer(serializers.Serializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    interests = serializers.ListField(child=serializers.CharField())
 
     class Meta:
         model = User
