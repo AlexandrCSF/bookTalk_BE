@@ -106,6 +106,13 @@ class UserView(generics.GenericAPIView, BaseView):
 
         serializer = UserPatchSerializer(user, data=request.data, partial=True)
         if serializer.is_valid():
+            if 'interests' in request.data:
+                interests_list = serializer.validated_data.pop('interests')
+                interests = [
+                    GenresModel.objects.get(name=name)
+                    for name in interests_list
+                ]
+                user.interests.set(interests)
             serializer.save()
             response = UserSerializer(User.objects.get(id=id))
             return Response(status=status.HTTP_200_OK, data=response.data)
