@@ -112,16 +112,15 @@ class ClubUsersView(generics.ListAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class MemberView(generics.GenericAPIView):
+class MemberView(generics.GenericAPIView, BaseView):
     serializer_class = ClubCardSerializer
 
     def get_queryset(self):
-        user_id = self.request.query_params.get('user_id')
+        user_id = self.get_user()
         if user_id is None:
             return UserClubModel.objects.none()
         return UserClubModel.objects.filter(user_id=user_id).values_list('club_id', flat=True)
 
-    @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
         """
         Получить список клубов, в которые вступил пользователь
