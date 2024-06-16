@@ -65,6 +65,7 @@ class ClubPatchSerializer(serializers.Serializer):
     description = serializers.CharField()
     city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
     admin = serializers.SlugRelatedField(many=False, slug_field='id', queryset=User.objects.all())
+    interests = serializers.ListField(child=serializers.CharField())
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
