@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer
-from clubs.models import ClubModel, GenresModel, CityModel
+from clubs.models import ClubModel, GenresModel, CityModel, PictureModel
 from genres.serializers import GenresSerializer
 from meetings.serializers import MeetingSerializer
 
@@ -79,3 +79,9 @@ class ClubPatchSerializer(serializers.Serializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class PictureSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PictureModel
+        fields = '__all__'

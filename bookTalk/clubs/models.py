@@ -21,3 +21,9 @@ class UserClubModel(models.Model):
     id = models.AutoField(primary_key=True)
     club = models.ForeignKey(ClubModel, on_delete=models.CASCADE)
     user = models.ForeignKey('authorisation.User', on_delete=models.CASCADE)
+
+
+class PictureModel(models.Model):
+    id = models.AutoField(primary_key=True)
+    image = models.ImageField(upload_to='images/')
+

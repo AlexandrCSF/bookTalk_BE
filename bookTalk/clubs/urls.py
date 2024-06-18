@@ -1,5 +1,6 @@
 from django.urls import path
-from clubs.views import ClubCardView, ClubUsersView, MemberView, AdminView, UnsubscribeView, MeetingView, SubscribeView, RecommendsView
+from clubs.views import ClubCardView, ClubUsersView, MemberView, AdminView, UnsubscribeView, MeetingView, SubscribeView, \
+    RecommendsView, UploadView
 
 urlpatterns = [
     path('club/', ClubCardView.as_view(), name='get_club'),
@@ -10,4 +11,5 @@ urlpatterns = [
     path('unsubscribe/', UnsubscribeView.as_view()),
     path('recommends/', RecommendsView.as_view()),
     path('meetings/', MeetingView.as_view()),
+    path('test/',UploadView.as_view())
 ]

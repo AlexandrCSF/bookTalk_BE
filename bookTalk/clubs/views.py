@@ -7,8 +7,9 @@ from rest_framework.response import Response
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
-from clubs.models import ClubModel, UserClubModel
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
+    PictureSerializer
+from clubs.models import ClubModel, UserClubModel, PictureModel
 from genres.models import GenresModel
 from meetings.models import MeetingModel
 from meetings.serializers import MeetingSerializer
@@ -175,15 +176,7 @@ class AdminView(generics.GenericAPIView, BaseView):
         """
         clubs = self.get_queryset()
         serializer = self.get_serializer(clubs, many=True)
-        sorted_clubs = sorted(serializer.data, key=lambda x: self.calculate_jaccard_index(x, user), reverse=True)
-        return Response(sorted_clubs, status=status.HTTP_200_OK)
-
-    def calculate_jaccard_index(self, club, user):
-        club_interests = set(club.interests.all())
-        user_interests = set(user.interests.all())
-        intersection = club_interests.intersection(user_interests)
-        union = club_interests.union(user_interests)
-        return len(intersection) / len(union)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SubscribeView(generics.GenericAPIView, BaseView):
@@ -230,3 +223,9 @@ class MeetingView(generics.GenericAPIView):
         meeting = MeetingModel.objects.filter(club_id=club_id)
         serializer = MeetingSerializer(meeting, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+def upload_file(f):
+    with open(f"images/{f.name}", "wb+") as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
