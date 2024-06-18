@@ -11,5 +11,5 @@ urlpatterns = [
     path('unsubscribe/', UnsubscribeView.as_view()),
     path('recommends/', RecommendsView.as_view()),
     path('meetings/', MeetingView.as_view()),
-    path('test/',UploadView.as_view())
+    path('upload_image/',UploadView.as_view())
 ]

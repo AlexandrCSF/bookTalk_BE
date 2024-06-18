@@ -1,15 +1,17 @@
+import cloudinary.uploader as uploader
 from django.contrib.auth import get_user_model
 from django.forms import model_to_dict
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
-    PictureSerializer
-from clubs.models import ClubModel, UserClubModel, PictureModel
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
+from clubs.models import ClubModel, UserClubModel
 from genres.models import GenresModel
 from meetings.models import MeetingModel
 from meetings.serializers import MeetingSerializer
@@ -225,7 +227,25 @@ class MeetingView(generics.GenericAPIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-def upload_file(f):
-    with open(f"images/{f.name}", "wb+") as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
+class UploadView(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+
+    @staticmethod
+    def post(request):
+        file = request.data.get('picture')
+        club_id = request.data.get('club_id')
+        club = get_object_or_404(ClubModel, id=club_id)
+        if club:
+            upload_data = uploader.upload(file)
+            img = upload_data['url']
+            club.picture = img
+            club.save()
+            return Response({
+                'status': 'success',
+                'data': upload_data,
+                'url': img,
+                'club': ClubCardSerializer(club).data,
+            }, status=201)
