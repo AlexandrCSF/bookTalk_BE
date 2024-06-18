@@ -131,7 +131,7 @@ class MemberView(generics.GenericAPIView, BaseView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class RecommendsView(generics.GenericAPIView):
+class RecommendsView(generics.GenericAPIView, BaseView):
     serializer_class = ClubCardSerializer
 
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
@@ -139,41 +139,51 @@ class RecommendsView(generics.GenericAPIView):
         """
         Получить список клубов, рекомендованных для пользователя
         """
-        user_id = request.query_params.get('user_id')
+        user_id = self.get_user()
         if not user_id:
             return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
-        if user.is_verified:
-            interests = user.interests.all()
-            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
+        interests = user.interests.all()
+        if not interests:
+            clubs = ClubModel.objects.filter(city=user.city)
             serializer = self.get_serializer(clubs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            clubs = ClubModel.objects.all()[:10]
+            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
+            if not clubs:
+                return Response({"error": "no clubs found with user's interests"}, status=status.HTTP_404_NOT_FOUND)
             serializer = self.get_serializer(clubs, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            sorted_clubs = sorted(serializer.data, key=lambda x: x['calculate_jaccard_index'](x, user), reverse=True)
+            return Response(sorted_clubs, status=status.HTTP_200_OK)
 
 
-class AdminView(generics.GenericAPIView):
+class AdminView(generics.GenericAPIView, BaseView):
     serializer_class = ClubCardSerializer
 
     def get_queryset(self):
-        user_id = self.request.query_params.get('user_id')
+        user_id = self.get_user()
         if user_id is None:
             return ClubModel.objects.none()
         return ClubModel.objects.filter(admin_id=user_id)
 
-    @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
         """
         Получить список клубов, которыми управляет пользователь
         """
         clubs = self.get_queryset()
         serializer = self.get_serializer(clubs, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        sorted_clubs = sorted(serializer.data, key=lambda x: self.calculate_jaccard_index(x, user), reverse=True)
+        return Response(sorted_clubs, status=status.HTTP_200_OK)
+
+    def calculate_jaccard_index(self, club, user):
+        club_interests = set(club.interests.all())
+        user_interests = set(user.interests.all())
+        intersection = club_interests.intersection(user_interests)
+        union = club_interests.union(user_interests)
+        return len(intersection) / len(union)
 
 
 class SubscribeView(generics.GenericAPIView, BaseView):
