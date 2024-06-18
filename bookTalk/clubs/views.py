@@ -1,9 +1,12 @@
+import cloudinary.uploader as uploader
 from django.contrib.auth import get_user_model
 from django.forms import model_to_dict
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status
 from rest_framework.generics import get_object_or_404
+from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
@@ -175,15 +178,7 @@ class AdminView(generics.GenericAPIView, BaseView):
         """
         clubs = self.get_queryset()
         serializer = self.get_serializer(clubs, many=True)
-        sorted_clubs = sorted(serializer.data, key=lambda x: self.calculate_jaccard_index(x, user), reverse=True)
-        return Response(sorted_clubs, status=status.HTTP_200_OK)
-
-    def calculate_jaccard_index(self, club, user):
-        club_interests = set(club.interests.all())
-        user_interests = set(user.interests.all())
-        intersection = club_interests.intersection(user_interests)
-        union = club_interests.union(user_interests)
-        return len(intersection) / len(union)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class SubscribeView(generics.GenericAPIView, BaseView):
@@ -230,3 +225,27 @@ class MeetingView(generics.GenericAPIView):
         meeting = MeetingModel.objects.filter(club_id=club_id)
         serializer = MeetingSerializer(meeting, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UploadView(APIView):
+    parser_classes = (
+        MultiPartParser,
+        JSONParser,
+    )
+
+    @staticmethod
+    def post(request):
+        file = request.data.get('picture')
+        club_id = request.data.get('club_id')
+        club = get_object_or_404(ClubModel, id=club_id)
+        if club:
+            upload_data = uploader.upload(file)
+            img = upload_data['url']
+            club.picture = img
+            club.save()
+            return Response({
+                'status': 'success',
+                'data': upload_data,
+                'url': img,
+                'club': ClubCardSerializer(club).data,
+            }, status=201)

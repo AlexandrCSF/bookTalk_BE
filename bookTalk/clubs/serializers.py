@@ -19,7 +19,7 @@ class ClubCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClubModel
-        fields = ('id', 'name', 'description', 'admin', 'city', 'interests', 'meetings')
+        fields = ('id', 'name', 'description', 'admin', 'city', 'interests', 'meetings', 'picture')
         read_only_fields = ('id', 'city')
         many = False
 
