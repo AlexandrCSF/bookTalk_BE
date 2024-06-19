@@ -7,12 +7,14 @@ from rest_framework.response import Response
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
+    ClubSearchSerializer
 from clubs.models import ClubModel, UserClubModel
 from genres.models import GenresModel
 from meetings.models import MeetingModel
 from meetings.serializers import MeetingSerializer
 from utils.view import BaseView
+from search.client import ElasticClient
 
 
 class ClubCardView(generics.GenericAPIView):
@@ -84,6 +86,15 @@ class ClubCardView(generics.GenericAPIView):
             return Response(status=status.HTTP_200_OK, data=model_to_dict(response))
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+
+    @swagger_auto_schema(request_body=ClubSearchSerializer, responses={200: ClubCardSerializer(many=True)})
+    def post(self, request):
+        """Поиск по клубам"""
+        search = request.data['search']
+        client = ElasticClient()
+        club_ids = client.search(search)
+        clubs = ClubModel.objects.filter(id__in=club_ids)
+        return Response(ClubCardSerializer(clubs,many=True).data, status=200)
 
 
 class ClubUsersView(generics.ListAPIView):
@@ -190,7 +201,7 @@ class UnsubscribeView(generics.GenericAPIView, BaseView):
         Выйти из клуба
         """
         user_id = self.get_user()
-        user = User.objects.get(id = user_id)
+        user = User.objects.get(id=user_id)
         club = ClubModel.objects.get(id=self.request.query_params['club_id'])
         UserClubModel.objects.filter(user=user, club=club).delete()
         return Response(data={"user": model_to_dict(user), "club": model_to_dict(club)}, status=200)
