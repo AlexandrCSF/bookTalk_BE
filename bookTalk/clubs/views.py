@@ -19,6 +19,7 @@ from meetings.serializers import MeetingSerializer
 from utils.view import BaseView
 from search.client import ElasticClient
 
+
 class ClubCardView(generics.GenericAPIView):
     queryset = ClubModel.objects.all()
 
@@ -246,15 +247,38 @@ class UploadView(APIView):
     def post(request):
         file = request.data.get('picture')
         club_id = request.data.get('club_id')
-        club = get_object_or_404(ClubModel, id=club_id)
-        if club:
-            upload_data = uploader.upload(file)
-            img = upload_data['url']
-            club.picture = img
-            club.save()
-            return Response({
-                'status': 'success',
-                'data': upload_data,
-                'url': img,
-                'club': ClubCardSerializer(club).data,
-            }, status=201)
+        user_id = request.data.get('user_id')
+        if user_id and club_id:
+            return Response({"error": "Only one of the following required: club_id or user_id"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        upload_data = uploader.upload(file)
+        img = upload_data['url']
+        if club_id:
+            club = get_object_or_404(ClubModel, id=club_id)
+            if club:
+                club.picture = img
+                club.save()
+                return Response({
+                    'status': 'success',
+                    'data': upload_data,
+                    'url': img,
+                    'club': ClubCardSerializer(club).data,
+                }, status=201)
+            else:
+                return Response({"error": "Club not found"},
+                                status=status.HTTP_404_NOT_FOUND)
+        if user_id:
+            user = get_object_or_404(User, id=user_id)
+            if user:
+                user.picture = img
+                user.save()
+                return Response({
+                    'status': 'success',
+                    'data': upload_data,
+                    'url': img,
+                    'club': UserSerializer(user).data,
+                }, status=201)
+
+            else:
+                return Response({"error": "User not found"},
+                                status=status.HTTP_404_NOT_FOUND)

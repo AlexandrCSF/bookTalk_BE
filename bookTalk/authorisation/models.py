@@ -16,3 +16,4 @@ class User(AbstractUser):
     interests = models.ManyToManyField(GenresModel, related_name="users")
     uuid = models.CharField(max_length=100, default=uuid.uuid4, unique=True, editable=False)
     is_verified = models.BooleanField(default=False)
+    picture = models.CharField(max_length=100, default='',blank=True)

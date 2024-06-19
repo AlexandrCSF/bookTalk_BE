@@ -9,8 +9,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'is_superuser', 'username', 'password', 'first_name', 'last_name', 'date_joined', 'email',
-                  'city', 'uuid',
-                  'refresh_token', 'interests']
+                  'city', 'uuid', 'refresh_token', 'interests','picture']
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
