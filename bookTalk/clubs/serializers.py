@@ -23,13 +23,6 @@ class ClubCardSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'city')
         many = False
 
-    def calculate_jaccard_index(self, club, user):
-        club_interests = set(club.interests.all())
-        user_interests = set(user.interests.all())
-        intersection = club_interests.intersection(user_interests)
-        union = club_interests.union(user_interests)
-        return len(intersection) / len(union)
-
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data

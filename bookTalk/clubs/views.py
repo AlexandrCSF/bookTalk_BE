@@ -157,20 +157,35 @@ class RecommendsView(generics.GenericAPIView, BaseView):
             return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=user_id)
+            administrated_clubs = ClubModel.objects.filter(admin=user).values_list("id", flat=True)
+            membership = ClubModel.objects.filter(
+                id__in=UserClubModel.objects.filter(user_id=user_id).values_list("club_id")).values_list("id", flat=True)
         except User.DoesNotExist:
             return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
         interests = user.interests.all()
         if not interests:
-            clubs = ClubModel.objects.filter(city=user.city)
+            clubs = ClubModel.objects.filter(city=user.city).exclude(id__in=administrated_clubs).exclude(
+                id__in=membership)
             serializer = self.get_serializer(clubs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city)
+            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city).exclude(id__in=administrated_clubs).exclude(
+                id__in=membership)
             if not clubs:
-                return Response({"error": "no clubs found with user's interests"}, status=status.HTTP_404_NOT_FOUND)
+                clubs = ClubModel.objects.all().exclude(id__in=administrated_clubs).exclude(
+                id__in=membership)[:10]
             serializer = self.get_serializer(clubs, many=True)
-            sorted_clubs = sorted(serializer.data, key=lambda x: x['calculate_jaccard_index'](x, user), reverse=True)
+            sorted_clubs = sorted(serializer.data,
+                                  key=lambda x: self.calculate_jaccard_index(ClubModel.objects.get(id=x['id']), user),
+                                  reverse=True)
             return Response(sorted_clubs, status=status.HTTP_200_OK)
+
+    def calculate_jaccard_index(self, club, user):
+        club_interests = set(club.interests.all())
+        user_interests = set(user.interests.all())
+        intersection = club_interests.intersection(user_interests)
+        union = club_interests.union(user_interests)
+        return len(intersection) / len(union)
 
 
 class AdminView(generics.GenericAPIView, BaseView):
