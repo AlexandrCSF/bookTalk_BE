@@ -5,7 +5,7 @@ from genres.models import GenresModel
 
 class CityModel(models.Model):
     city_fias = models.CharField(max_length=50, primary_key=True)
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=100)
 
 
 class ClubModel(models.Model):

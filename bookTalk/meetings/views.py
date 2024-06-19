@@ -55,10 +55,7 @@ class MeetingView(generics.GenericAPIView):
         club = ClubModel.objects.get(id=request.query_params['club_id'])
         new_meeting['club'] = club
         meeting = MeetingModel.objects.create(**new_meeting)
-        new_meeting['club'] = model_to_dict(club)
-        meeting_serializer = MeetingSerializer(data=new_meeting)
-        meeting_serializer.is_valid(raise_exception=True)
-        return Response(status=status.HTTP_200_OK, data=meeting_serializer.data)
+        return Response(status=status.HTTP_200_OK, data=MeetingSerializer(MeetingModel.objects.get(id=meeting.id)).data)
 
     @swagger_auto_schema(request_body=MeetingPatchSerializer(),
                          query_serializer=MeetingRequestSerializer(),
