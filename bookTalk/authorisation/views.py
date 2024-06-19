@@ -18,6 +18,7 @@ from genres.models import GenresModel
 from utils.view import BaseView
 from django.contrib.auth import authenticate
 
+
 class AuthorisationView(generics.GenericAPIView, BaseView):
     queryset = User.objects.all()
     serializer_class = FreeTokenSerializer
@@ -57,6 +58,14 @@ class UserView(generics.GenericAPIView, BaseView):
         id = self.request.query_params['user_id']
         user = User.objects.get(id=id)
         return Response(UserSerializer(user).data, status=200)
+
+    def delete(self, request):
+        """Удаление пользователя"""
+        id = self.get_user()
+        user = User.objects.get(id=id)
+        response_data = UserSerializer(user).data
+        user.delete()
+        return Response(response_data, status=status.HTTP_200_OK)
 
     @swagger_auto_schema(request_body=UserCreateSerializer(),
                          query_serializer=UserUUidSerializerRequest())
