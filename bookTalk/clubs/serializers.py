@@ -79,3 +79,7 @@ class ClubPatchSerializer(serializers.Serializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class ClubSearchSerializer(serializers.Serializer):
+    search = serializers.CharField(max_length=50)

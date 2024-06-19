@@ -10,13 +10,14 @@ from rest_framework.views import APIView
 
 from authorisation.models import User
 from authorisation.serializers import UserSerializer, UserRequestSerializer
-from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer
+from clubs.serializers import ClubCardSerializer, ClubCreateSerializer, ClubPatchSerializer, ClubRequestSerializer, \
+    ClubSearchSerializer
 from clubs.models import ClubModel, UserClubModel
 from genres.models import GenresModel
 from meetings.models import MeetingModel
 from meetings.serializers import MeetingSerializer
 from utils.view import BaseView
-
+from search.client import ElasticClient
 
 class ClubCardView(generics.GenericAPIView):
     queryset = ClubModel.objects.all()
@@ -93,6 +94,15 @@ class ClubCardView(generics.GenericAPIView):
             return Response(status=status.HTTP_200_OK, data=response.data)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
+
+    @swagger_auto_schema(request_body=ClubSearchSerializer, responses={200: ClubCardSerializer(many=True)})
+    def post(self, request):
+        """Поиск по клубам"""
+        search = request.data['search']
+        client = ElasticClient()
+        club_ids = client.search(search)
+        clubs = ClubModel.objects.filter(id__in=club_ids)
+        return Response(ClubCardSerializer(clubs, many=True).data, status=200)
 
 
 class ClubUsersView(generics.ListAPIView):
