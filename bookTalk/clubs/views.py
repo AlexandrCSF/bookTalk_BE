@@ -137,7 +137,6 @@ class MemberView(generics.GenericAPIView, BaseView):
 class RecommendsView(generics.GenericAPIView, BaseView):
     serializer_class = ClubCardSerializer
 
-    @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
         """
         Получить список клубов, рекомендованных для пользователя
