@@ -65,7 +65,7 @@ class ClubCardView(generics.GenericAPIView):
             for name in interests_list
         ]
         club.interests.set(interests)
-
+        self.update_elastic(club)
         return Response(status=status.HTTP_200_OK,
                         data=ClubCardSerializer(club).data)
 
@@ -104,6 +104,14 @@ class ClubCardView(generics.GenericAPIView):
         club_ids = client.search(search)
         clubs = ClubModel.objects.filter(id__in=club_ids)
         return Response(ClubCardSerializer(clubs, many=True).data, status=200)
+
+    def update_elastic(self, club):
+        client = ElasticClient()
+        data = [{"index": {"_index": client.index, "_id": client._client.count(index=client.index)['count'] + 1}}]
+        club_dict = model_to_dict(club, fields=[field.name for field in club._meta.fields])
+        club_dict['admin'] = club.admin.username
+        data.append(club_dict)
+        client.bulk(data)
 
 
 class ClubUsersView(generics.ListAPIView):
@@ -159,7 +167,8 @@ class RecommendsView(generics.GenericAPIView, BaseView):
             user = User.objects.get(id=user_id)
             administrated_clubs = ClubModel.objects.filter(admin=user).values_list("id", flat=True)
             membership = ClubModel.objects.filter(
-                id__in=UserClubModel.objects.filter(user_id=user_id).values_list("club_id")).values_list("id", flat=True)
+                id__in=UserClubModel.objects.filter(user_id=user_id).values_list("club_id")).values_list("id",
+                                                                                                         flat=True)
         except User.DoesNotExist:
             return Response({"error": "user not found"}, status=status.HTTP_404_NOT_FOUND)
         interests = user.interests.all()
@@ -169,11 +178,12 @@ class RecommendsView(generics.GenericAPIView, BaseView):
             serializer = self.get_serializer(clubs, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
         else:
-            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city).exclude(id__in=administrated_clubs).exclude(
+            clubs = ClubModel.objects.filter(interests__in=interests, city=user.city).exclude(
+                id__in=administrated_clubs).exclude(
                 id__in=membership)
             if not clubs:
                 clubs = ClubModel.objects.all().exclude(id__in=administrated_clubs).exclude(
-                id__in=membership)[:10]
+                    id__in=membership)[:10]
             serializer = self.get_serializer(clubs, many=True)
             sorted_clubs = sorted(serializer.data,
                                   key=lambda x: self.calculate_jaccard_index(ClubModel.objects.get(id=x['id']), user),
