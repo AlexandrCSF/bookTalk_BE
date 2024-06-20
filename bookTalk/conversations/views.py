@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
 
 from conversations.serializers import ConversationSerializer, MessageSerializer, ConversationRequestSerializer, \
-    MessageListRequestSerializer, MessageDestroyRequestSerializer
+    MessageListRequestSerializer, MessageDestroyRequestSerializer, ConversationCreateSerializer, MessageCreateSerializer
 from conversations.models import ConversationModel, MessageModel
 from rest_framework import generics, status
 from clubs.models import ClubModel
@@ -25,14 +25,15 @@ class ConversationListCreateView(generics.ListCreateAPIView):
         serializer = ConversationSerializer(conversations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(request_body=ConversationCreateSerializer())
     def post(self, request, *args, **kwargs):
         """Создание обсуждения клуба"""
         return super().post(request, *args, **kwargs)
 
 
 class MessageListCreateView(generics.ListCreateAPIView):
-    serializer_class = MessageSerializer
     queryset = MessageModel.objects.all()
+    serializer_class = MessageSerializer
 
     @swagger_auto_schema(query_serializer=MessageListRequestSerializer(),
                          responses={200: MessageSerializer(many=True)})
@@ -46,6 +47,7 @@ class MessageListCreateView(generics.ListCreateAPIView):
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @swagger_auto_schema(request_body=MessageCreateSerializer())
     def post(self, request, *args, **kwargs):
         """Создание сообщения обсуждения"""
         return super().post(request, *args, **kwargs)

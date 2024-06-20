@@ -10,7 +10,8 @@ from clubs.models import UserClubModel, ClubModel
 from clubs.serializers import ClubRequestSerializer
 from meetings.models import MeetingModel, UserMeetingModel
 from meetings.serializers import MeetingSerializer, MeetingRequestSerializer, MeetingCreateSerializer, \
-    MeetingPatchSerializer, IWillAttendSerializer
+    MeetingPatchSerializer
+from utils.view import BaseView
 
 
 class MeetingView(generics.GenericAPIView):
@@ -21,10 +22,11 @@ class MeetingView(generics.GenericAPIView):
     })
     def get(self, request, *args, **kwargs):
         """
-        Список пользователей,идущих на встречу
+        Список пользователей, идущих на встречу
         """
         meeting = self.request.query_params['meeting_id']
-        users = User.objects.filter(id__in=UserMeetingModel.objects.filter(meeting=meeting).values_list("user",flat=True))
+        users = User.objects.filter(
+            id__in=UserMeetingModel.objects.filter(meeting=meeting).values_list("user", flat=True))
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -52,14 +54,16 @@ class MeetingView(generics.GenericAPIView):
         new_meeting = serializer.validated_data
         club = ClubModel.objects.get(id=request.query_params['club_id'])
         new_meeting['club'] = club
-        MeetingModel.objects.create(**new_meeting)
-        new_meeting['club'] = model_to_dict(club)
-        return Response(status=status.HTTP_200_OK, data=new_meeting)
+        meeting = MeetingModel.objects.create(**new_meeting)
+        return Response(status=status.HTTP_200_OK, data=MeetingSerializer(MeetingModel.objects.get(id=meeting.id)).data)
 
     @swagger_auto_schema(request_body=MeetingPatchSerializer(),
                          query_serializer=MeetingRequestSerializer(),
                          responses={200: MeetingSerializer()})
     def patch(self, request, *args, **kwargs):
+        """
+        Редактирование встречи
+        """
         id = request.query_params.get('meeting_id')
         if not id:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={'error': 'meeting_id is required'})
@@ -75,23 +79,47 @@ class MeetingView(generics.GenericAPIView):
             return Response(status=status.HTTP_400_BAD_REQUEST, data=serializer.errors)
 
 
-class AttendanceView(generics.GenericAPIView):
+class AttendanceView(generics.GenericAPIView, BaseView):
+
     @swagger_auto_schema(query_serializer=UserRequestSerializer())
     def get(self, request, *args, **kwargs):
+        """
+        Получить список встреч, на которые идет пользователь
+        """
         user = User.objects.get(id=self.request.query_params['user_id'])
-        meetings = MeetingModel.objects.filter(id__in=UserMeetingModel.objects.filter(user=user).values_list("meeting",flat=True))
-        serializer = MeetingSerializer(meetings,many=True)
-        return Response(serializer.data,status=200)
+        meetings = MeetingModel.objects.filter(
+            id__in=UserMeetingModel.objects.filter(user=user).values_list("meeting", flat=True))
+        serializer = MeetingSerializer(meetings, many=True)
+        return Response(serializer.data, status=200)
 
-    @swagger_auto_schema(query_serializer=IWillAttendSerializer())
+    @swagger_auto_schema(query_serializer=MeetingRequestSerializer())
     def post(self, request, *args, **kwargs):
-        user = User.objects.get(id=self.request.query_params['user_id'])
+        """
+        Пользователь пойдет на встречу
+        """
+        user = User.objects.get(id=self.get_user())
         meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
         club = meeting.club
         subscribed = get_object_or_404(UserClubModel, user=user, club=club)
         if subscribed:
             UserMeetingModel.objects.create(user=user, meeting=meeting)
-            return Response(data={"user": model_to_dict(user), "meeting": model_to_dict(meeting)}, status=200)
+            return Response(data={"user": UserSerializer(user).data, "meeting": MeetingSerializer(meeting).data}, status=200)
         else:
             return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User is not subscribed to club"})
 
+
+class WontAttendView(generics.GenericAPIView, BaseView):
+
+    @swagger_auto_schema(query_serializer=MeetingRequestSerializer())
+    def post(self, request, *args, **kwargs):
+        """
+        Пользователь не пойдет на встречу
+        """
+        user = User.objects.get(id=self.get_user())
+        meeting = MeetingModel.objects.get(id=self.request.query_params['meeting_id'])
+        will_attend = get_object_or_404(UserMeetingModel, user=user, meeting=meeting)
+        if will_attend:
+            will_attend.delete()
+            return Response(data={"user": UserSerializer(user).data, "meeting": MeetingSerializer(meeting).data}, status=200)
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST, data={"error": "User will not attend on the meeting"})

@@ -5,16 +5,17 @@ from genres.models import GenresModel
 
 class CityModel(models.Model):
     city_fias = models.CharField(max_length=50, primary_key=True)
-    name = models.CharField(max_length=40)
+    name = models.CharField(max_length=100)
 
 
 class ClubModel(models.Model):
-    id = models.IntegerField(primary_key=True)
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100, null=False)
     city = models.ForeignKey(CityModel, on_delete=models.PROTECT)
     admin = models.ForeignKey('authorisation.User', on_delete=models.PROTECT)
     description = models.TextField()
     interests = models.ManyToManyField(GenresModel)
+    picture = models.CharField(max_length=200, blank=True, default='')
 
 
 class UserClubModel(models.Model):

@@ -1,7 +1,9 @@
 from rest_framework import serializers
 
 from authorisation.models import User
+from authorisation.serializers import UserSerializer
 from clubs.models import ClubModel, GenresModel, CityModel
+from genres.serializers import GenresSerializer
 from meetings.serializers import MeetingSerializer
 
 
@@ -17,13 +19,15 @@ class ClubCardSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ClubModel
-        fields = ('id', 'name', 'description', 'admin', 'city', 'interests', 'meetings')
+        fields = ('id', 'name', 'description', 'admin', 'city', 'interests', 'meetings', 'picture')
         read_only_fields = ('id', 'city')
         many = False
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
+        representation['interests'] = GenresSerializer(instance.interests.all(), many=True).data
         representation['meetings'] = MeetingSerializer(instance.meetings.all(), many=True).data
+        representation['admin'] = UserSerializer(instance.admin).data
         return representation
 
 
@@ -39,11 +43,15 @@ class ClubCardSerializerRequest(serializers.ModelSerializer):
 
 
 class ClubCreateSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
     name = serializers.CharField()
     description = serializers.CharField()
     admin_id = serializers.IntegerField()
     city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
+    interests = serializers.ListField(
+        child=serializers.CharField(),
+        allow_empty=True,
+        required=False
+    )
 
 
 class CitySerializer(serializers.ModelSerializer):
@@ -57,6 +65,7 @@ class ClubPatchSerializer(serializers.Serializer):
     description = serializers.CharField()
     city_fias = serializers.SlugRelatedField(many=False, slug_field='city_fias', queryset=CityModel.objects.all())
     admin = serializers.SlugRelatedField(many=False, slug_field='id', queryset=User.objects.all())
+    interests = serializers.ListField(child=serializers.CharField())
 
     def update(self, instance, validated_data):
         for attr, value in validated_data.items():
@@ -65,6 +74,5 @@ class ClubPatchSerializer(serializers.Serializer):
         return instance
 
 
-class SubscribeSerializer(serializers.Serializer):
-    user_id = serializers.IntegerField()
-    club_id = serializers.IntegerField()
+class ClubSearchSerializer(serializers.Serializer):
+    search = serializers.CharField(max_length=50)
