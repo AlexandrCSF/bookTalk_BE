@@ -132,6 +132,7 @@ class UserView(generics.GenericAPIView, BaseView):
 class FreeTokenView(generics.GenericAPIView, BaseView):
     serializer_class = FreeTokenSerializer
     authentication_classes = []
+    permission_classes = []
 
     @swagger_auto_schema(request_body=UserUUidSerializerRequest(), responses={200: FreeTokenSerializer()})
     def post(self, request):
@@ -145,6 +146,7 @@ class FreeTokenView(generics.GenericAPIView, BaseView):
 
 class RefreshTokenView(generics.GenericAPIView):
     serializer_class = FreeTokenSerializer
+    permission_classes = []
 
     @swagger_auto_schema(request_body=TokenRefreshSerializerRequest(), responses={200: FreeTokenSerializer()})
     def post(self, request):
