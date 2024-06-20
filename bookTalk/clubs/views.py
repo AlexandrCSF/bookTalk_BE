@@ -165,6 +165,10 @@ class RecommendsView(generics.GenericAPIView, BaseView):
             return Response({"error": "user_id is required"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             user = User.objects.get(id=user_id)
+            if user.username=='Not_authorised_user':
+                clubs = ClubModel.objects.all()[:10]
+                serializer = self.get_serializer(clubs, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             administrated_clubs = ClubModel.objects.filter(admin=user).values_list("id", flat=True)
             membership = ClubModel.objects.filter(
                 id__in=UserClubModel.objects.filter(user_id=user_id).values_list("club_id")).values_list("id",
